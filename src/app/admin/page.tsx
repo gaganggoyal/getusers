@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth";
 import {
   ReviewButtons,
   DrawWinnerButton,
+  DeleteGiveawayButton,
   CreateGiveawayForm,
   CreateTaskForm,
   MakeAdvertiserForm,
@@ -112,7 +113,10 @@ export default async function AdminPage() {
                   {g.winner && <> · winner: {g.winner.name}</>}
                 </p>
               </div>
-              {g.status === "ACTIVE" && <DrawWinnerButton giveawayId={g.id} />}
+              <div className="flex items-center gap-3">
+                {g.status === "ACTIVE" && <DrawWinnerButton giveawayId={g.id} />}
+                <DeleteGiveawayButton giveawayId={g.id} title={g.title} />
+              </div>
             </div>
           ))}
         </div>

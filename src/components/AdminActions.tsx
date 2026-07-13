@@ -13,11 +13,11 @@ function useApi() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  async function call(url: string, body?: unknown) {
+  async function call(url: string, body?: unknown, method: string = "POST") {
     setBusy(true);
     setMsg(null);
     const res = await fetch(url, {
-      method: "POST",
+      method,
       headers: { "Content-Type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -82,6 +82,33 @@ export function DrawWinnerButton({ giveawayId }: { giveawayId: string }) {
       </button>
       <Msg msg={msg} />
     </div>
+  );
+}
+
+export function DeleteGiveawayButton({
+  giveawayId,
+  title,
+}: {
+  giveawayId: string;
+  title: string;
+}) {
+  const { call, busy } = useApi();
+  return (
+    <button
+      disabled={busy}
+      onClick={() => {
+        if (
+          confirm(
+            `Delete “${title}” and all its tasks, clicks and entries?\n\nThis cannot be undone.`
+          )
+        ) {
+          call(`/api/admin/giveaways/${giveawayId}`, undefined, "DELETE");
+        }
+      }}
+      className="rounded-md border border-red-700 text-red-300 hover:bg-red-600/20 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
+    >
+      Delete
+    </button>
   );
 }
 
