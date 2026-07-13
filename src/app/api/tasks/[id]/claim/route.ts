@@ -22,7 +22,12 @@ export async function POST(
     where: { id },
     include: { giveaway: true },
   });
-  if (!task || !task.active || task.giveaway.status !== "ACTIVE") {
+  if (
+    !task ||
+    !task.active ||
+    task.status !== "APPROVED" ||
+    task.giveaway.status !== "ACTIVE"
+  ) {
     return NextResponse.json({ error: "Task not available." }, { status: 404 });
   }
 

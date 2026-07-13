@@ -46,8 +46,7 @@ export default function AuthForm({ mode, audience = "user" }: Props) {
     router.refresh();
   }
 
-  const input =
-    "w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none";
+  const input = "field";
 
   const heading = isAdv
     ? mode === "login"
@@ -58,15 +57,11 @@ export default function AuthForm({ mode, audience = "user" }: Props) {
       : "Create your account";
 
   return (
-    <div className="mx-auto max-w-sm mt-12">
-      {isAdv && (
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-indigo-400">
-          For advertisers
-        </p>
-      )}
-      <h1 className="text-2xl font-bold text-white mb-2">{heading}</h1>
+    <div className="mx-auto max-w-sm mt-12 card p-6">
+      {isAdv && <p className="eyebrow mb-2">For advertisers</p>}
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">{heading}</h1>
       {isAdv && mode === "register" && (
-        <p className="mb-6 text-sm text-slate-400">
+        <p className="mb-6 text-sm text-slate-600">
           Get your tracking key instantly and see exactly what you pay for.
         </p>
       )}
@@ -100,11 +95,8 @@ export default function AuthForm({ mode, audience = "user" }: Props) {
           minLength={mode === "register" ? 8 : undefined}
           className={input}
         />
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        <button
-          disabled={busy}
-          className="w-full rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 px-3 py-2 text-sm font-medium text-white"
-        >
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        <button disabled={busy} className="btn w-full">
           {busy
             ? "Please wait…"
             : mode === "login"
@@ -115,13 +107,13 @@ export default function AuthForm({ mode, audience = "user" }: Props) {
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-slate-400">
+      <p className="mt-4 text-sm text-slate-600">
         {mode === "login" ? (
           <>
             No account?{" "}
             <Link
               href={isAdv ? "/advertiser/register" : "/register"}
-              className="text-indigo-400 hover:underline"
+              className="text-violet-600 hover:underline"
             >
               Sign up
             </Link>
@@ -131,7 +123,7 @@ export default function AuthForm({ mode, audience = "user" }: Props) {
             Already registered?{" "}
             <Link
               href={isAdv ? "/advertiser/login" : "/login"}
-              className="text-indigo-400 hover:underline"
+              className="text-violet-600 hover:underline"
             >
               Sign in
             </Link>
@@ -142,7 +134,7 @@ export default function AuthForm({ mode, audience = "user" }: Props) {
         {isAdv ? (
           <>
             Want to win prizes instead?{" "}
-            <Link href={mode === "login" ? "/login" : "/register"} className="text-indigo-400 hover:underline">
+            <Link href={mode === "login" ? "/login" : "/register"} className="text-violet-600 hover:underline">
               User {mode === "login" ? "sign in" : "sign up"}
             </Link>
           </>
@@ -151,7 +143,7 @@ export default function AuthForm({ mode, audience = "user" }: Props) {
             Are you an advertiser?{" "}
             <Link
               href={mode === "login" ? "/advertiser/login" : "/advertiser/register"}
-              className="text-indigo-400 hover:underline"
+              className="text-violet-600 hover:underline"
             >
               {mode === "login" ? "Sign in here" : "Sign up here"}
             </Link>

@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
       targetUrl,
       entries,
       timerSeconds,
+      // admin-created tasks are pre-approved
+      status: "APPROVED",
     },
   });
   return NextResponse.json({ ok: true, id: task.id });

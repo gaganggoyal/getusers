@@ -6,9 +6,9 @@ import { getSessionUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 const STATUS_STYLE: Record<string, string> = {
-  APPROVED: "text-emerald-400",
-  PENDING: "text-amber-400",
-  REJECTED: "text-red-400",
+  APPROVED: "text-emerald-600",
+  PENDING: "text-amber-600",
+  REJECTED: "text-red-600",
 };
 
 export default async function DashboardPage() {
@@ -36,26 +36,26 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-white">My entries</h1>
+      <h1 className="text-2xl font-bold text-slate-900">My entries</h1>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         {[...perGiveaway.values()].map((g) => (
           <Link
             key={g.id}
             href={`/giveaways/${g.id}`}
-            className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 hover:border-indigo-600"
+            className="card card-hover p-4"
           >
-            <p className="text-sm text-slate-400">{g.title}</p>
-            <p className="mt-1 text-2xl font-bold text-emerald-400">
+            <p className="text-sm text-slate-600">{g.title}</p>
+            <p className="mt-1 text-2xl font-bold text-emerald-600">
               {g.entries}{" "}
               <span className="text-sm font-normal text-slate-500">entries</span>
             </p>
           </Link>
         ))}
         {perGiveaway.size === 0 && (
-          <p className="text-slate-400 text-sm sm:col-span-3">
+          <p className="text-slate-600 text-sm sm:col-span-3">
             No entries yet —{" "}
-            <Link href="/" className="text-indigo-400 hover:underline">
+            <Link href="/" className="text-violet-600 hover:underline">
               pick a giveaway
             </Link>{" "}
             and complete your first task.
@@ -63,12 +63,12 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      <h2 className="mt-10 mb-4 text-lg font-semibold text-white">
+      <h2 className="mt-10 mb-4 text-lg font-semibold text-slate-900">
         Task history
       </h2>
-      <div className="overflow-x-auto rounded-xl border border-slate-800">
+      <div className="card overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-900 text-slate-400 text-left">
+          <thead className="bg-slate-50 text-slate-500 text-left">
             <tr>
               <th className="px-4 py-3 font-medium">Task</th>
               <th className="px-4 py-3 font-medium">Giveaway</th>
@@ -79,12 +79,12 @@ export default async function DashboardPage() {
           </thead>
           <tbody>
             {completions.map((c) => (
-              <tr key={c.id} className="border-t border-slate-800">
-                <td className="px-4 py-3 text-white">{c.task.title}</td>
-                <td className="px-4 py-3 text-slate-400">
+              <tr key={c.id} className="border-t border-slate-100">
+                <td className="px-4 py-3 text-slate-900">{c.task.title}</td>
+                <td className="px-4 py-3 text-slate-600">
                   {c.task.giveaway.title}
                 </td>
-                <td className="px-4 py-3 text-slate-400">+{c.task.entries}</td>
+                <td className="px-4 py-3 text-slate-600">+{c.task.entries}</td>
                 <td className={`px-4 py-3 font-medium ${STATUS_STYLE[c.status]}`}>
                   {c.status}
                 </td>

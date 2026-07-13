@@ -24,7 +24,12 @@ export async function GET(
     where: { id: taskId },
     include: { giveaway: true },
   });
-  if (!task || !task.active || task.giveaway.status !== "ACTIVE") {
+  if (
+    !task ||
+    !task.active ||
+    task.status !== "APPROVED" ||
+    task.giveaway.status !== "ACTIVE"
+  ) {
     return NextResponse.redirect(new URL("/", base));
   }
 

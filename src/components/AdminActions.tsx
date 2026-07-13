@@ -1,46 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useApi, Msg } from "./useApi";
+import {
+  TASK_TYPE_GROUPS,
+  TASK_TYPES,
+  VERIFICATION_LABELS,
+  type VerificationKey,
+} from "@/lib/taskTypes";
 
-const input =
-  "w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none";
-const btn =
-  "rounded-md bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 px-4 py-2 text-sm font-medium text-white";
-
-function useApi() {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
-  async function call(url: string, body?: unknown, method: string = "POST") {
-    setBusy(true);
-    setMsg(null);
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const data = await res.json().catch(() => null);
-    setBusy(false);
-    if (!res.ok) {
-      setMsg({ ok: false, text: data?.error ?? "Request failed." });
-      return null;
-    }
-    router.refresh();
-    return data;
-  }
-  return { call, busy, msg, setMsg };
-}
-
-function Msg({ msg }: { msg: { ok: boolean; text: string } | null }) {
-  if (!msg) return null;
-  return (
-    <p className={`text-sm ${msg.ok ? "text-emerald-400" : "text-red-400"}`}>
-      {msg.text}
-    </p>
-  );
-}
+// ── Completion review (manual proof queue) ──────────────────────────────────
 
 export function ReviewButtons({ completionId }: { completionId: string }) {
   const { call, busy } = useApi();
@@ -49,14 +17,14 @@ export function ReviewButtons({ completionId }: { completionId: string }) {
       <button
         disabled={busy}
         onClick={() => call(`/api/admin/completions/${completionId}`, { action: "approve" })}
-        className="rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-3 py-1.5 text-xs font-medium text-white"
+        className="btn btn-sm bg-emerald-600 hover:bg-emerald-700"
       >
         Approve
       </button>
       <button
         disabled={busy}
         onClick={() => call(`/api/admin/completions/${completionId}`, { action: "reject" })}
-        className="rounded-md bg-red-600 hover:bg-red-500 disabled:opacity-50 px-3 py-1.5 text-xs font-medium text-white"
+        className="btn btn-sm bg-red-600 hover:bg-red-700"
       >
         Reject
       </button>
@@ -64,53 +32,176 @@ export function ReviewButtons({ completionId }: { completionId: string }) {
   );
 }
 
-export function DrawWinnerButton({ giveawayId }: { giveawayId: string }) {
-  const { call, busy, msg, setMsg } = useApi();
+// ── Approve / reject queue (giveaways + tasks share this) ───────────────────
+
+export function ModerationButtons({ url }: { url: string }) {
+  const { call, busy } = useApi();
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex gap-2">
       <button
         disabled={busy}
-        onClick={async () => {
-          const data = await call(`/api/admin/giveaways/${giveawayId}/draw`);
-          if (data?.winner) {
-            setMsg({ ok: true, text: `Winner: ${data.winner.name} (${data.winner.email})` });
-          }
-        }}
-        className="rounded-md bg-amber-600 hover:bg-amber-500 disabled:opacity-50 px-3 py-1.5 text-xs font-medium text-white"
+        onClick={() => call(url, { action: "approve" }, "PATCH")}
+        className="btn btn-sm bg-emerald-600 hover:bg-emerald-700"
       >
-        🎲 Draw winner
+        Approve
       </button>
+      <button
+        disabled={busy}
+        onClick={() => {
+          const note = prompt("Reason for rejection (shown to the advertiser):");
+          if (note === null) return;
+          call(url, { action: "reject", note }, "PATCH");
+        }}
+        className="btn-outline btn-sm border-red-300 text-red-600 hover:bg-red-50"
+      >
+        Reject
+      </button>
+    </div>
+  );
+}
+
+// ── Full giveaway lifecycle controls ────────────────────────────────────────
+
+export function GiveawayControls({
+  giveaway,
+}: {
+  giveaway: { id: string; title: string; status: string };
+}) {
+  const { call, busy, msg, setMsg } = useApi();
+  const url = `/api/admin/giveaways/${giveaway.id}`;
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {(giveaway.status === "PENDING" ||
+          giveaway.status === "DRAFT" ||
+          giveaway.status === "REJECTED") && (
+          <button
+            disabled={busy}
+            onClick={() => call(url, { action: "approve" }, "PATCH")}
+            className="btn btn-sm bg-emerald-600 hover:bg-emerald-700"
+          >
+            Approve → live
+          </button>
+        )}
+        {giveaway.status === "PENDING" && (
+          <button
+            disabled={busy}
+            onClick={() => {
+              const note = prompt("Reason for rejection (shown to the advertiser):");
+              if (note === null) return;
+              call(url, { action: "reject", note }, "PATCH");
+            }}
+            className="btn-outline btn-sm border-red-300 text-red-600 hover:bg-red-50"
+          >
+            Reject
+          </button>
+        )}
+        {giveaway.status === "ACTIVE" && (
+          <>
+            <button
+              disabled={busy}
+              onClick={async () => {
+                const data = await call(`${url}/draw`);
+                if (data?.winner) {
+                  setMsg({
+                    ok: true,
+                    text: `Winner: ${data.winner.name} (${data.winner.email})`,
+                  });
+                }
+              }}
+              className="btn btn-sm bg-amber-500 hover:bg-amber-600"
+            >
+              🎲 Draw winner
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => call(url, { action: "pause" }, "PATCH")}
+              className="btn-outline btn-sm"
+            >
+              Pause
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                if (confirm("End this giveaway now without drawing a winner?")) {
+                  call(url, { action: "end" }, "PATCH");
+                }
+              }}
+              className="btn-outline btn-sm"
+            >
+              End
+            </button>
+          </>
+        )}
+        {giveaway.status === "PAUSED" && (
+          <button
+            disabled={busy}
+            onClick={() => call(url, { action: "resume" }, "PATCH")}
+            className="btn btn-sm bg-emerald-600 hover:bg-emerald-700"
+          >
+            Resume
+          </button>
+        )}
+        <button
+          disabled={busy}
+          onClick={() => {
+            if (
+              confirm(
+                `Delete “${giveaway.title}” and all its tasks, clicks and entries?\n\nThis cannot be undone.`
+              )
+            ) {
+              call(url, undefined, "DELETE");
+            }
+          }}
+          className="btn-ghost text-red-600 hover:bg-red-50"
+        >
+          Delete
+        </button>
+      </div>
       <Msg msg={msg} />
     </div>
   );
 }
 
-export function DeleteGiveawayButton({
-  giveawayId,
-  title,
+// ── Task controls (moderation + pause) ──────────────────────────────────────
+
+export function TaskControls({
+  task,
 }: {
-  giveawayId: string;
-  title: string;
+  task: { id: string; status: string; active: boolean };
 }) {
   const { call, busy } = useApi();
+  const url = `/api/admin/tasks/${task.id}`;
+
   return (
-    <button
-      disabled={busy}
-      onClick={() => {
-        if (
-          confirm(
-            `Delete “${title}” and all its tasks, clicks and entries?\n\nThis cannot be undone.`
-          )
-        ) {
-          call(`/api/admin/giveaways/${giveawayId}`, undefined, "DELETE");
-        }
-      }}
-      className="rounded-md border border-red-700 text-red-300 hover:bg-red-600/20 disabled:opacity-50 px-3 py-1.5 text-xs font-medium"
-    >
-      Delete
-    </button>
+    <div className="flex flex-wrap items-center gap-2">
+      {task.status === "PENDING" && <ModerationButtons url={url} />}
+      {task.status === "APPROVED" && (
+        <button
+          disabled={busy}
+          onClick={() => call(url, { active: !task.active }, "PATCH")}
+          className="btn-ghost"
+        >
+          {task.active ? "Pause" : "Resume"}
+        </button>
+      )}
+      <button
+        disabled={busy}
+        onClick={() => {
+          if (confirm("Delete this task and its clicks/entries?")) {
+            call(url, undefined, "DELETE");
+          }
+        }}
+        className="btn-ghost text-red-600 hover:bg-red-50"
+      >
+        Delete
+      </button>
+    </div>
   );
 }
+
+// ── Create forms ────────────────────────────────────────────────────────────
 
 export function CreateGiveawayForm() {
   const { call, busy, msg } = useApi();
@@ -119,19 +210,22 @@ export function CreateGiveawayForm() {
       className="space-y-3"
       onSubmit={async (e) => {
         e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        const data = await call("/api/admin/giveaways", Object.fromEntries(f));
-        if (data) (e.target as HTMLFormElement).reset?.();
+        const form = e.currentTarget;
+        const data = await call(
+          "/api/admin/giveaways",
+          Object.fromEntries(new FormData(form))
+        );
+        if (data) form.reset();
       }}
     >
-      <input name="title" placeholder="Title (e.g. iPhone 17 Giveaway)" required className={input} />
-      <input name="prize" placeholder="Prize (e.g. iPhone 17 Pro 256GB)" required className={input} />
-      <textarea name="description" placeholder="Description / rules" rows={3} className={input} />
-      <label className="block text-xs text-slate-400">
+      <input name="title" placeholder="Title (e.g. iPhone 17 Giveaway)" required className="field" />
+      <input name="prize" placeholder="Prize (e.g. iPhone 17 Pro 256GB)" required className="field" />
+      <textarea name="description" placeholder="Description / rules" rows={3} className="field" />
+      <label className="label">
         Ends at
-        <input name="endsAt" type="datetime-local" required className={`${input} mt-1`} />
+        <input name="endsAt" type="datetime-local" required className="field mt-1" />
       </label>
-      <button disabled={busy} className={btn}>Create giveaway</button>
+      <button disabled={busy} className="btn">Create giveaway</button>
       <Msg msg={msg} />
     </form>
   );
@@ -148,48 +242,52 @@ export function CreateTaskForm({
       className="space-y-3"
       onSubmit={async (e) => {
         e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        const data = await call("/api/admin/tasks", Object.fromEntries(f));
-        if (data) (e.target as HTMLFormElement).reset?.();
+        const form = e.currentTarget;
+        const data = await call(
+          "/api/admin/tasks",
+          Object.fromEntries(new FormData(form))
+        );
+        if (data) form.reset();
       }}
     >
-      <select name="giveawayId" required className={input}>
+      <select name="giveawayId" required className="field">
         <option value="">— Giveaway —</option>
         {giveaways.map((g) => (
           <option key={g.id} value={g.id}>{g.title}</option>
         ))}
       </select>
-      <input name="title" placeholder="Task title (e.g. Sign up on Acme)" required className={input} />
-      <input name="description" placeholder="Short instructions for the user" className={input} />
+      <input name="title" placeholder="Task title (e.g. Sign up on Acme)" required className="field" />
+      <input name="description" placeholder="Short instructions for the user" className="field" />
       <input
         name="targetUrl"
         placeholder="Target URL — use {click_id} placeholder or we append ?click_id="
         required
-        className={input}
+        className="field"
       />
       <div className="grid grid-cols-2 gap-3">
-        <select name="type" required className={input}>
-          <option value="PARTNER_SIGNUP">Partner signup</option>
-          <option value="APP_INSTALL">App install</option>
-          <option value="NEWSLETTER_SIGNUP">Newsletter signup</option>
-          <option value="YOUTUBE_SUBSCRIBE">YouTube subscribe</option>
-          <option value="YOUTUBE_LIKE">YouTube like</option>
-          <option value="INSTAGRAM_FOLLOW">Instagram follow</option>
-          <option value="X_FOLLOW">X follow</option>
-          <option value="CUSTOM">Custom</option>
+        <select name="type" required className="field" defaultValue="PARTNER_SIGNUP">
+          {TASK_TYPE_GROUPS.map((grp) => (
+            <optgroup key={grp.group} label={grp.group}>
+              {grp.keys.map((k) => (
+                <option key={k} value={k}>
+                  {TASK_TYPES[k].emoji} {TASK_TYPES[k].label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
         </select>
-        <select name="verification" required className={input}>
-          <option value="POSTBACK">Postback (S2S, best quality)</option>
-          <option value="MANUAL">Manual review (proof)</option>
-          <option value="TIMER">Timer (auto-credit)</option>
+        <select name="verification" required className="field" defaultValue="POSTBACK">
+          {(Object.keys(VERIFICATION_LABELS) as VerificationKey[]).map((v) => (
+            <option key={v} value={v}>{VERIFICATION_LABELS[v]}</option>
+          ))}
         </select>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <input name="entries" type="number" min={1} defaultValue={1} title="Entries" className={input} />
-        <input name="timerSeconds" type="number" min={5} defaultValue={30} title="Timer seconds" className={input} />
-        <input name="advertiserEmail" placeholder="Advertiser email" className={input} />
+        <input name="entries" type="number" min={1} defaultValue={1} title="Entries" className="field" />
+        <input name="timerSeconds" type="number" min={5} defaultValue={30} title="Timer seconds" className="field" />
+        <input name="advertiserEmail" placeholder="Advertiser email" className="field" />
       </div>
-      <button disabled={busy} className={btn}>Add task</button>
+      <button disabled={busy} className="btn">Add task</button>
       <Msg msg={msg} />
     </form>
   );
@@ -202,15 +300,18 @@ export function MakeAdvertiserForm() {
       className="flex flex-wrap items-start gap-2"
       onSubmit={async (e) => {
         e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        const data = await call("/api/admin/advertisers", Object.fromEntries(f));
+        const form = e.currentTarget;
+        const data = await call(
+          "/api/admin/advertisers",
+          Object.fromEntries(new FormData(form))
+        );
         if (data?.postbackKey) {
           setMsg({ ok: true, text: `Advertiser enabled. Postback key: ${data.postbackKey}` });
         }
       }}
     >
-      <input name="email" type="email" placeholder="Registered user's email" required className={`${input} max-w-xs`} />
-      <button disabled={busy} className={btn}>Make advertiser</button>
+      <input name="email" type="email" placeholder="Registered user's email" required className="field max-w-xs" />
+      <button disabled={busy} className="btn">Make advertiser</button>
       <div className="w-full"><Msg msg={msg} /></div>
     </form>
   );

@@ -11,7 +11,7 @@ const BASE =
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const giveaways = await db.giveaway.findMany({
-    where: { status: { not: "DRAFT" } },
+    where: { status: { in: ["ACTIVE", "ENDED"] } },
     select: { id: true, status: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });

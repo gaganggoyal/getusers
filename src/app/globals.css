@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0f1a;
-  --foreground: #e5e9f0;
+  /* Light, friendly palette — violet brand, emerald for wins, amber for prizes */
+  --background: #f6f7fb;
+  --foreground: #0f172a;
 }
 
 @theme inline {
@@ -13,7 +14,57 @@
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(60rem 40rem at 50% -20rem, rgba(124, 58, 237, 0.08), transparent),
+    var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+  /* Surfaces */
+  .card {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+  }
+  .card-hover {
+    @apply transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-violet-300;
+  }
+
+  /* Buttons — base is the violet primary; add a bg-* utility inline to recolor */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2
+           text-sm font-semibold text-white shadow-sm transition-colors
+           hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300
+           bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors
+           hover:border-violet-400 hover:text-violet-700 disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs
+           font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply rounded-md px-3 py-1.5 text-xs;
+  }
+
+  /* Form controls */
+  .field {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900
+           placeholder-slate-400 transition-colors focus:border-violet-500 focus:outline-none
+           focus:ring-2 focus:ring-violet-500/20;
+  }
+  .label {
+    @apply block text-xs font-medium text-slate-600;
+  }
+
+  /* Status pills — pair with a color utility, e.g. `pill bg-emerald-100 text-emerald-700` */
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-widest text-violet-600;
+  }
 }

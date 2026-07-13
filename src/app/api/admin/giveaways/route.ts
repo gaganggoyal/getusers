@@ -20,7 +20,8 @@ export async function POST(req: NextRequest) {
   }
 
   const giveaway = await db.giveaway.create({
-    data: { title, description, prize, endsAt },
+    // admin-created giveaways go live immediately
+    data: { title, description, prize, endsAt, status: "ACTIVE", createdById: admin.id },
   });
   return NextResponse.json({ ok: true, id: giveaway.id });
 }

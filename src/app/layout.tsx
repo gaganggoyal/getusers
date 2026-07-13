@@ -35,19 +35,19 @@ export default async function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <header className="border-b border-slate-800 bg-slate-950/80 sticky top-0 z-10 backdrop-blur">
-          <nav className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-6">
-            <Link href="/" className="font-bold text-lg text-white">
-              🎁 GetUsers
+      <body className="min-h-full flex flex-col text-slate-800">
+        <header className="border-b border-slate-200 bg-white/80 sticky top-0 z-10 backdrop-blur">
+          <nav className="mx-auto max-w-5xl px-4 py-3 flex items-center gap-5">
+            <Link href="/" className="font-bold text-lg text-slate-900">
+              🎁 <span className="text-violet-600">GetUsers</span>
             </Link>
-            <Link href="/" className="text-sm text-slate-300 hover:text-white">
+            <Link href="/" className="text-sm text-slate-600 hover:text-violet-700">
               Giveaways
             </Link>
             {user && (
               <Link
                 href="/dashboard"
-                className="text-sm text-slate-300 hover:text-white"
+                className="text-sm text-slate-600 hover:text-violet-700"
               >
                 My entries
               </Link>
@@ -55,7 +55,7 @@ export default async function RootLayout({
             {user && (user.role === "ADVERTISER" || user.role === "ADMIN") && (
               <Link
                 href="/advertiser"
-                className="text-sm text-slate-300 hover:text-white"
+                className="text-sm text-slate-600 hover:text-violet-700"
               >
                 Advertiser
               </Link>
@@ -63,7 +63,7 @@ export default async function RootLayout({
             {!user && (
               <Link
                 href="/#advertisers"
-                className="text-sm text-slate-300 hover:text-white"
+                className="hidden sm:inline text-sm text-slate-600 hover:text-violet-700"
               >
                 For advertisers
               </Link>
@@ -71,7 +71,7 @@ export default async function RootLayout({
             {user?.role === "ADMIN" && (
               <Link
                 href="/admin"
-                className="text-sm text-slate-300 hover:text-white"
+                className="text-sm text-slate-600 hover:text-violet-700"
               >
                 Admin
               </Link>
@@ -79,21 +79,18 @@ export default async function RootLayout({
             <div className="ml-auto flex items-center gap-4">
               {user ? (
                 <>
-                  <span className="text-sm text-slate-400">{user.name}</span>
+                  <span className="hidden sm:inline text-sm text-slate-500">{user.name}</span>
                   <LogoutButton />
                 </>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="text-sm text-slate-300 hover:text-white"
+                    className="text-sm text-slate-600 hover:text-violet-700"
                   >
                     Log in
                   </Link>
-                  <Link
-                    href="/register"
-                    className="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-md"
-                  >
+                  <Link href="/register" className="btn btn-sm">
                     Sign up
                   </Link>
                 </>
@@ -104,7 +101,7 @@ export default async function RootLayout({
         <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-8">
           {children}
         </main>
-        <footer className="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+        <footer className="border-t border-slate-200 py-6 text-center text-xs text-slate-500">
           GetUsers — complete partner offers, earn entries, win prizes.
         </footer>
       </body>

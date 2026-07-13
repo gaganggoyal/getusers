@@ -14,19 +14,37 @@ enum Role {
 }
 
 enum GiveawayStatus {
-  DRAFT
-  ACTIVE
-  ENDED
+  DRAFT // advertiser is still editing, not submitted
+  PENDING // submitted by advertiser, awaiting admin review
+  ACTIVE // approved and live
+  PAUSED // temporarily hidden by admin
+  ENDED // finished / winner drawn
+  REJECTED // admin declined
+}
+
+enum TaskStatus {
+  PENDING // awaiting admin review
+  APPROVED // live
+  REJECTED // admin declined
 }
 
 enum TaskType {
   PARTNER_SIGNUP
   APP_INSTALL
+  VISIT_WEBSITE
+  WATCH_VIDEO
+  NEWSLETTER_SIGNUP
   YOUTUBE_SUBSCRIBE
   YOUTUBE_LIKE
   INSTAGRAM_FOLLOW
+  TIKTOK_FOLLOW
   X_FOLLOW
-  NEWSLETTER_SIGNUP
+  FACEBOOK_FOLLOW
+  DISCORD_JOIN
+  TELEGRAM_JOIN
+  TWITCH_FOLLOW
+  REFER_FRIEND
+  SURVEY
   CUSTOM
 }
 
@@ -55,10 +73,11 @@ model User {
   signupIp     String?
   createdAt    DateTime @default(now())
 
-  tasks       Task[]       @relation("AdvertiserTasks")
-  clicks      Click[]
-  completions Completion[]
-  wins        Giveaway[]   @relation("GiveawayWinner")
+  tasks            Task[]       @relation("AdvertiserTasks")
+  clicks           Click[]
+  completions      Completion[]
+  wins             Giveaway[]   @relation("GiveawayWinner")
+  createdGiveaways Giveaway[]   @relation("GiveawayCreator")
 }
 
 model Giveaway {
@@ -67,10 +86,15 @@ model Giveaway {
   description String         @db.Text
   prize       String
   imageUrl    String?        @db.Text
-  status      GiveawayStatus @default(ACTIVE)
+  status      GiveawayStatus @default(PENDING)
   endsAt      DateTime
   winnerId    String?
   winner      User?          @relation("GiveawayWinner", fields: [winnerId], references: [id])
+  // who submitted this giveaway (advertiser self-serve); null for legacy/admin
+  createdById String?
+  createdBy   User?          @relation("GiveawayCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  // admin's note when rejecting, shown back to the advertiser
+  reviewNote  String?        @db.Text
   createdAt   DateTime       @default(now())
 
   tasks Task[]
@@ -90,6 +114,11 @@ model Task {
   entries      Int              @default(1)
   verification VerificationMode @default(POSTBACK)
   timerSeconds Int              @default(30)
+  // moderation state; only APPROVED tasks are shown to users
+  status       TaskStatus       @default(PENDING)
+  // admin's note when rejecting, shown back to the advertiser
+  reviewNote   String?          @db.Text
+  // advertiser pause switch (independent of moderation)
   active       Boolean          @default(true)
   createdAt    DateTime         @default(now())
 

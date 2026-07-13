@@ -23,12 +23,16 @@ export async function GET(
   const giveaway = await db.giveaway.findUnique({
     where: { id },
     include: {
-      tasks: { where: { active: true }, select: { id: true, entries: true } },
+      tasks: {
+        where: { active: true, status: "APPROVED" },
+        select: { id: true, entries: true },
+      },
       winner: { select: { name: true } },
     },
   });
 
-  if (!giveaway) {
+  // Only publicly visible giveaways may be embedded.
+  if (!giveaway || !["ACTIVE", "ENDED"].includes(giveaway.status)) {
     return html(unavailableCard(origin, id), 404);
   }
 
@@ -84,7 +88,7 @@ type CardData = {
   title: string;
   prize: string;
   description: string;
-  status: "DRAFT" | "ACTIVE" | "ENDED";
+  status: string;
   endsAt: Date;
   taskCount: number;
   totalEntries: number;
@@ -108,7 +112,7 @@ function shell(inner: string, extraScript = "") {
   #gu{max-width:420px;margin:0 auto;border:1px solid #1e293b;border-radius:16px;
       background:linear-gradient(160deg,#131a2e,#0b0f1a);color:#e5e9f0;padding:20px;
       box-shadow:0 10px 30px rgba(0,0,0,.25)}
-  .gu-badge{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#818cf8}
+  .gu-badge{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a78bfa}
   .gu-prize{margin-top:8px;font-size:20px;font-weight:700;line-height:1.25;color:#fff}
   .gu-prize .gu-emoji{margin-right:6px}
   .gu-title{margin-top:4px;font-size:13px;color:#94a3b8}
@@ -120,12 +124,12 @@ function shell(inner: string, extraScript = "") {
   .gu-chip .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748b}
   .gu-chip .v{margin-top:2px;font-size:15px;font-weight:700;color:#fff}
   .gu-cta{display:block;margin-top:16px;text-align:center;text-decoration:none;
-      background:#4f46e5;color:#fff;font-weight:600;font-size:15px;padding:12px 16px;border-radius:10px}
-  .gu-cta:hover{background:#6366f1}
+      background:#7c3aed;color:#fff;font-weight:600;font-size:15px;padding:12px 16px;border-radius:10px}
+  .gu-cta:hover{background:#8b5cf6}
   .gu-ended{margin-top:14px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.08);
       color:#fcd34d;border-radius:10px;padding:10px 12px;font-size:13px}
   .gu-foot{margin-top:14px;text-align:center;font-size:11px;color:#64748b}
-  .gu-foot a{color:#818cf8;text-decoration:none}
+  .gu-foot a{color:#a78bfa;text-decoration:none}
   .gu-foot a:hover{text-decoration:underline}
 </style>
 </head>
