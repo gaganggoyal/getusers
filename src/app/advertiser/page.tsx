@@ -1,8 +1,12 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import EmbedSnippet from "@/components/EmbedSnippet";
 
 export const dynamic = "force-dynamic";
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export default async function AdvertiserPage() {
   const user = await requireRole("ADVERTISER", "ADMIN");
@@ -16,6 +20,19 @@ export default async function AdvertiserPage() {
       completions: true,
     },
     orderBy: { createdAt: "desc" },
+  });
+
+  // Giveaways this advertiser may embed: active ones that contain their own
+  // offer (admins may embed any active giveaway).
+  const embeddable = await db.giveaway.findMany({
+    where: {
+      status: "ACTIVE",
+      ...(user.role === "ADMIN"
+        ? {}
+        : { tasks: { some: { advertiserId: user.id } } }),
+    },
+    select: { id: true, title: true, prize: true },
+    orderBy: { endsAt: "asc" },
   });
 
   const rows = tasks.map((t) => {
@@ -104,6 +121,32 @@ export default async function AdvertiserPage() {
           </tbody>
         </table>
       </div>
+
+      <h2 className="mt-10 mb-1 text-lg font-semibold text-white">
+        Embed a giveaway on your site
+      </h2>
+      <p className="mb-4 text-sm text-slate-400">
+        Showcase a giveaway your offer is part of, right on your own page. Drop
+        in the snippet and a live, auto-sizing widget appears — every visitor who
+        enters flows through your offer.
+      </p>
+      {embeddable.length === 0 ? (
+        <p className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 text-sm text-slate-500">
+          No embeddable giveaways yet. Once your offer is added to an active
+          giveaway, its embed snippet will appear here.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {embeddable.map((g) => (
+            <EmbedSnippet
+              key={g.id}
+              siteUrl={SITE_URL}
+              giveawayId={g.id}
+              title={`${g.title} — 🏆 ${g.prize}`}
+            />
+          ))}
+        </div>
+      )}
 
       <h2 className="mt-10 mb-4 text-lg font-semibold text-white">
         Postback integration
