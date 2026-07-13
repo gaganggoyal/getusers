@@ -14,7 +14,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const origin = new URL(_req.url).origin;
+  // Behind a reverse proxy, req.url reflects the internal bind address, so
+  // anchor public links to the canonical site URL when configured.
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    new URL(_req.url).origin;
 
   const giveaway = await db.giveaway.findUnique({
     where: { id },

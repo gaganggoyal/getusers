@@ -12,9 +12,12 @@ export async function GET(
   { params }: { params: Promise<{ taskId: string }> }
 ) {
   const { taskId } = await params;
+  // Behind a reverse proxy, req.url is the internal bind address; anchor
+  // same-site redirects to the canonical site URL when configured.
+  const base = process.env.NEXT_PUBLIC_SITE_URL || req.url;
   const user = await getSessionUser();
   if (!user) {
-    return NextResponse.redirect(new URL(`/login?next=/`, req.url));
+    return NextResponse.redirect(new URL(`/login?next=/`, base));
   }
 
   const task = await db.task.findUnique({
@@ -22,7 +25,7 @@ export async function GET(
     include: { giveaway: true },
   });
   if (!task || !task.active || task.giveaway.status !== "ACTIVE") {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/", base));
   }
 
   // Reuse an existing click for this user+task so repeat clicks don't
@@ -53,7 +56,7 @@ export async function GET(
       target.searchParams.set("click_id", click.clickId);
     }
   } catch {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/", base));
   }
 
   return NextResponse.redirect(target);
