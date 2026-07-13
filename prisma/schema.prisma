@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -51,7 +51,7 @@ model User {
   // advertiser-only: secret key advertisers include in postback calls
   postbackKey  String?  @unique
   company      String?
-  website      String?
+  website      String?  @db.Text
   signupIp     String?
   createdAt    DateTime @default(now())
 
@@ -64,9 +64,9 @@ model User {
 model Giveaway {
   id          String         @id @default(cuid())
   title       String
-  description String
+  description String         @db.Text
   prize       String
-  imageUrl    String?
+  imageUrl    String?        @db.Text
   status      GiveawayStatus @default(ACTIVE)
   endsAt      DateTime
   winnerId    String?
@@ -84,9 +84,9 @@ model Task {
   advertiser   User?            @relation("AdvertiserTasks", fields: [advertiserId], references: [id])
   type         TaskType
   title        String
-  description  String
+  description  String           @db.Text
   // where the user is sent; {click_id} placeholder is replaced with the tracked id
-  targetUrl    String
+  targetUrl    String           @db.Text
   entries      Int              @default(1)
   verification VerificationMode @default(POSTBACK)
   timerSeconds Int              @default(30)
@@ -105,7 +105,7 @@ model Click {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   ip        String?
-  userAgent String?
+  userAgent String?  @db.Text
   createdAt DateTime @default(now())
 
   completion Completion?
@@ -124,7 +124,7 @@ model Completion {
   status     CompletionStatus @default(PENDING)
   source     VerificationMode
   // proof link/username submitted by user for MANUAL tasks
-  proof      String?
+  proof      String?          @db.Text
   // payout reported by advertiser postback, informational
   payout     Float?
   ip         String?
