@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { parseSignupGoal } from "@/lib/giveaway";
+import { parseSignupGoal, uniqueGiveawaySlug } from "@/lib/giveaway";
 
 export async function POST(req: NextRequest) {
   const admin = await requireRole("ADMIN");
@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     // admin-created giveaways go live immediately
     data: {
       title,
+      slug: await uniqueGiveawaySlug(title),
       description,
       prize,
       imageUrl: imageUrl || null,
@@ -41,5 +42,5 @@ export async function POST(req: NextRequest) {
       createdById: admin.id,
     },
   });
-  return NextResponse.json({ ok: true, id: giveaway.id });
+  return NextResponse.json({ ok: true, id: giveaway.id, slug: giveaway.slug });
 }

@@ -107,7 +107,7 @@ export default async function Home() {
               return (
                 <Link
                   key={g.id}
-                  href={`/giveaways/${g.id}`}
+                  href={`/giveaways/${g.slug ?? g.id}`}
                   className="card card-hover block overflow-hidden"
                 >
                   {g.imageUrl && (

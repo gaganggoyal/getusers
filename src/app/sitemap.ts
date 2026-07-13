@@ -12,7 +12,7 @@ const BASE =
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const giveaways = await db.giveaway.findMany({
     where: { status: { in: ["ACTIVE", "ENDED"] } },
-    select: { id: true, status: true, createdAt: true },
+    select: { id: true, slug: true, status: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -23,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const giveawayRoutes: MetadataRoute.Sitemap = giveaways.map((g) => ({
-    url: `${BASE}/giveaways/${g.id}`,
+    url: `${BASE}/giveaways/${g.slug ?? g.id}`,
     lastModified: g.createdAt,
     changeFrequency: g.status === "ACTIVE" ? "daily" : "monthly",
     priority: g.status === "ACTIVE" ? 0.8 : 0.4,

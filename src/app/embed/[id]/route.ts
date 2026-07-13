@@ -30,6 +30,8 @@ export async function GET(
       winner: { select: { name: true } },
     },
   });
+  // Public page link prefers the title slug, falling back to the id.
+  const gaSlug = giveaway?.slug ?? id;
 
   // Only publicly visible giveaways may be embedded.
   if (!giveaway || !["ACTIVE", "ENDED"].includes(giveaway.status)) {
@@ -47,7 +49,7 @@ export async function GET(
   const maxEntries = giveaway.tasks.reduce((s, t) => s + t.entries, 0);
 
   return html(
-    giveawayCard(origin, id, {
+    giveawayCard(origin, id, gaSlug, {
       title: giveaway.title,
       prize: giveaway.prize,
       description: giveaway.description,
@@ -154,9 +156,11 @@ ${inner}
 </html>`;
 }
 
-function giveawayCard(origin: string, id: string, d: CardData) {
+// `id` keys the widget for embed.js resize messages (must match data-giveaway);
+// `slug` is the pretty identifier used only for the public page link.
+function giveawayCard(origin: string, id: string, slug: string, d: CardData) {
   const ended = d.status === "ENDED";
-  const gaUrl = `${origin}/giveaways/${encodeURIComponent(id)}`;
+  const gaUrl = `${origin}/giveaways/${encodeURIComponent(slug)}`;
   const endsLabel = d.endsAt.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",

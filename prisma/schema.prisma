@@ -82,6 +82,9 @@ model User {
 
 model Giveaway {
   id          String         @id @default(cuid())
+  // URL-friendly identifier derived from the title (e.g. "win-a-macbook").
+  // Nullable so legacy rows created before slugs keep resolving by their id.
+  slug        String?        @unique
   title       String
   description String         @db.Text
   prize       String

@@ -24,12 +24,14 @@ export default async function DashboardPage() {
   // entries per giveaway
   const perGiveaway = new Map<
     string,
-    { title: string; id: string; entries: number }
+    { title: string; id: string; slug: string | null; entries: number }
   >();
   for (const c of completions) {
     if (c.status !== "APPROVED") continue;
     const g = c.task.giveaway;
-    const cur = perGiveaway.get(g.id) ?? { title: g.title, id: g.id, entries: 0 };
+    const cur =
+      perGiveaway.get(g.id) ??
+      { title: g.title, id: g.id, slug: g.slug, entries: 0 };
     cur.entries += c.task.entries;
     perGiveaway.set(g.id, cur);
   }
@@ -42,7 +44,7 @@ export default async function DashboardPage() {
         {[...perGiveaway.values()].map((g) => (
           <Link
             key={g.id}
-            href={`/giveaways/${g.id}`}
+            href={`/giveaways/${g.slug ?? g.id}`}
             className="card card-hover p-4"
           >
             <p className="text-sm text-slate-600">{g.title}</p>

@@ -47,6 +47,7 @@ if (!existing) {
   await db.giveaway.create({
     data: {
       title: "iPhone 17 Pro Giveaway",
+      slug: "iphone-17-pro-giveaway",
       prize: "iPhone 17 Pro 256GB",
       description:
         "Complete partner offers below to earn entries. Winner drawn when the timer ends. The more tasks you finish, the higher your chances!",

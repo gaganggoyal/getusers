@@ -19,8 +19,10 @@ export default async function GiveawayPage({
   const { id } = await params;
   const user = await getSessionUser();
 
-  const giveaway = await db.giveaway.findUnique({
-    where: { id },
+  // Resolve by slug (new title-based URLs) or fall back to id so links shared
+  // before slugs existed keep working.
+  const giveaway = await db.giveaway.findFirst({
+    where: { OR: [{ slug: id }, { id }] },
     include: {
       tasks: {
         where: { active: true, status: "APPROVED" },
@@ -123,10 +125,14 @@ export default async function GiveawayPage({
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">
-                <HeroChip
-                  k={reason === "date" || ended ? "Ended" : "Ends"}
-                  v={endsLabel}
-                />
+                {/* With a sign-up goal, the deadline isn't the headline — the
+                    goal progress below is — so drop the date chip. */}
+                {giveaway.signupGoal == null && (
+                  <HeroChip
+                    k={reason === "date" || ended ? "Ended" : "Ends"}
+                    v={endsLabel}
+                  />
+                )}
                 <HeroChip k="Total entries" v={totalEntries.toLocaleString()} />
                 {user && (
                   <HeroChip

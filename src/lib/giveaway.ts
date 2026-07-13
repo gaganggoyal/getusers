@@ -1,5 +1,44 @@
 import { db } from "./db";
 
+/**
+ * Turn a giveaway title into a URL-friendly slug: lowercase, accents stripped,
+ * runs of non-alphanumerics collapsed to single hyphens, trimmed, capped at 60
+ * chars. Returns "" when the title has no usable characters (e.g. all emoji).
+ */
+export function slugify(title: string): string {
+  return title
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "") // drop combining accent marks
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60)
+    .replace(/-+$/g, ""); // slice may leave a trailing hyphen
+}
+
+/**
+ * Build a slug from `title` that is unique across giveaways. On collision it
+ * probes `base-2`, `base-3`, … then falls back to a short random suffix, so it
+ * always terminates even with many same-titled giveaways.
+ */
+export async function uniqueGiveawaySlug(title: string): Promise<string> {
+  const base = slugify(title) || "giveaway";
+  let candidate = base;
+  let n = 2;
+  while (
+    await db.giveaway.findUnique({
+      where: { slug: candidate },
+      select: { id: true },
+    })
+  ) {
+    candidate =
+      n <= 20
+        ? `${base}-${n++}`
+        : `${base}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+  return candidate;
+}
+
 /** Parse a sign-up goal from form input; blank/invalid → null (date-only). */
 export function parseSignupGoal(v: unknown): number | null {
   const s = String(v ?? "").trim();
