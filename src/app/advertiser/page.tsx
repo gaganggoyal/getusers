@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
 import EmbedSnippet from "@/components/EmbedSnippet";
+import PrizeImage from "@/components/PrizeImage";
+import GoalProgress from "@/components/GoalProgress";
 import {
   CreateGiveawayForm,
   CreateOfferForm,
@@ -17,6 +19,7 @@ import {
   TASK_STATUS_LABELS,
   TASK_STATUS_PILL,
 } from "@/lib/taskTypes";
+import { goalReached, datePassed } from "@/lib/giveaway";
 
 export const dynamic = "force-dynamic";
 
@@ -143,28 +146,66 @@ export default async function AdvertiserPage() {
                 prize: g.prize,
                 imageUrl: g.imageUrl,
                 endsAt: g.endsAt.toISOString(),
+                signupGoal: g.signupGoal,
                 status: g.status,
               };
+              const approvedSignups = g.tasks.reduce(
+                (s, t) =>
+                  s + t.completions.filter((c) => c.status === "APPROVED").length,
+                0
+              );
+              const hitGoal = goalReached(g, approvedSignups);
               return (
                 <div key={g.id} className="card p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-slate-900">
-                        {g.title}{" "}
-                        <span
-                          className={`pill ml-1 ${GIVEAWAY_STATUS_PILL[g.status]}`}
-                        >
-                          {GIVEAWAY_STATUS_LABELS[g.status]}
-                        </span>
-                      </p>
-                      <p className="mt-1 text-sm text-amber-600">🏆 {g.prize}</p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {g.tasks.length} offer{g.tasks.length === 1 ? "" : "s"} ·
-                        ends {g.endsAt.toLocaleDateString()}
-                      </p>
+                    <div className="flex gap-3">
+                      {g.imageUrl && (
+                        <div className="hidden h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 sm:flex">
+                          <PrizeImage
+                            src={g.imageUrl}
+                            alt={g.prize}
+                            className="max-h-16 max-w-16 object-contain"
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          {g.title}{" "}
+                          <span
+                            className={`pill ml-1 ${GIVEAWAY_STATUS_PILL[g.status]}`}
+                          >
+                            {GIVEAWAY_STATUS_LABELS[g.status]}
+                          </span>
+                        </p>
+                        <p className="mt-1 text-sm text-amber-600">🏆 {g.prize}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {g.tasks.length} offer{g.tasks.length === 1 ? "" : "s"} ·
+                          ends {g.endsAt.toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
                     <GiveawayManage giveaway={shape} />
                   </div>
+
+                  {g.signupGoal != null && (
+                    <div className="mt-3 max-w-md">
+                      <GoalProgress
+                        current={approvedSignups}
+                        goal={g.signupGoal}
+                      />
+                      {g.status === "ACTIVE" && hitGoal && (
+                        <p className="mt-1 text-xs font-medium text-emerald-600">
+                          🎯 Goal reached — ready for the winner draw.
+                        </p>
+                      )}
+                      {g.status === "ACTIVE" && !hitGoal && datePassed(g) && (
+                        <p className="mt-1 text-xs font-medium text-amber-600">
+                          ⏰ Deadline passed at {approvedSignups}/{g.signupGoal}{" "}
+                          sign-ups.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {g.status === "REJECTED" && g.reviewNote && (
                     <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

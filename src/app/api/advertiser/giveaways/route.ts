@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import { parseSignupGoal } from "@/lib/giveaway";
 
 /**
  * Advertiser submits a new giveaway. It is created as PENDING and only goes
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
       prize,
       imageUrl: imageUrl || null,
       endsAt,
+      signupGoal: parseSignupGoal(body?.signupGoal),
       status: "PENDING",
       createdById: user.id,
     },

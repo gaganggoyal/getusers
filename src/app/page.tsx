@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
+import PrizeImage from "@/components/PrizeImage";
+import GoalProgress from "@/components/GoalProgress";
+import { approvedSignupsByGiveaway, isOpenForEntries } from "@/lib/giveaway";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [user, giveaways] = await Promise.all([
+  const [user, activeGiveaways] = await Promise.all([
     getSessionUser(),
     db.giveaway.findMany({
       where: { status: "ACTIVE" },
@@ -13,6 +16,13 @@ export default async function Home() {
       include: { tasks: { where: { active: true, status: "APPROVED" } } },
     }),
   ]);
+
+  // Only list giveaways still open for entries (before their deadline and under
+  // their sign-up goal).
+  const signupCounts = await approvedSignupsByGiveaway(activeGiveaways);
+  const giveaways = activeGiveaways.filter((g) =>
+    isOpenForEntries(g, signupCounts.get(g.id) ?? 0)
+  );
 
   return (
     <div className="space-y-24">
@@ -91,30 +101,48 @@ export default async function Home() {
             back soon!
           </p>
         ) : (
-          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {giveaways.map((g) => {
               const maxEntries = g.tasks.reduce((s, t) => s + t.entries, 0);
               return (
                 <Link
                   key={g.id}
                   href={`/giveaways/${g.id}`}
-                  className="card card-hover block p-5"
+                  className="card card-hover block overflow-hidden"
                 >
-                  <h3 className="text-lg font-semibold text-slate-900">
-                    {g.title}
-                  </h3>
-                  <p className="mt-1 text-sm font-medium text-amber-600">
-                    🏆 {g.prize}
-                  </p>
-                  <p className="mt-2 text-sm text-slate-600 line-clamp-2">
-                    {g.description}
-                  </p>
-                  <div className="mt-4 flex justify-between text-xs text-slate-500">
-                    <span>
-                      {g.tasks.length} task{g.tasks.length === 1 ? "" : "s"} · up
-                      to {maxEntries} entries
-                    </span>
-                    <span>Ends {g.endsAt.toLocaleDateString()}</span>
+                  {g.imageUrl && (
+                    <div className="flex h-44 items-center justify-center bg-linear-to-br from-violet-50 to-slate-100">
+                      <PrizeImage
+                        src={g.imageUrl}
+                        alt={g.prize}
+                        className="max-h-40 max-w-[80%] object-contain"
+                      />
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {g.title}
+                    </h3>
+                    <p className="mt-1 text-sm font-medium text-amber-600">
+                      🏆 {g.prize}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600 line-clamp-2">
+                      {g.description}
+                    </p>
+                    {g.signupGoal != null && (
+                      <GoalProgress
+                        current={signupCounts.get(g.id) ?? 0}
+                        goal={g.signupGoal}
+                        className="mt-3"
+                      />
+                    )}
+                    <div className="mt-4 flex justify-between text-xs text-slate-500">
+                      <span>
+                        {g.tasks.length} task{g.tasks.length === 1 ? "" : "s"} · up
+                        to {maxEntries} entries
+                      </span>
+                      <span>Ends {g.endsAt.toLocaleDateString()}</span>
+                    </div>
                   </div>
                 </Link>
               );

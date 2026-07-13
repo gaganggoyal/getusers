@@ -88,6 +88,10 @@ model Giveaway {
   imageUrl    String?        @db.Text
   status      GiveawayStatus @default(PENDING)
   endsAt      DateTime
+  // optional target: close entries once this many sign-ups (approved
+  // conversions) are collected, so an advertiser's prize isn't drawn before
+  // they hit their goal. null = date-only.
+  signupGoal  Int?
   winnerId    String?
   winner      User?          @relation("GiveawayWinner", fields: [winnerId], references: [id])
   // who submitted this giveaway (advertiser self-serve); null for legacy/admin

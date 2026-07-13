@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import { parseSignupGoal } from "@/lib/giveaway";
 
 export async function POST(req: NextRequest) {
   const admin = await requireRole("ADMIN");
@@ -10,6 +11,7 @@ export async function POST(req: NextRequest) {
   const title = String(body?.title ?? "").trim();
   const description = String(body?.description ?? "").trim();
   const prize = String(body?.prize ?? "").trim();
+  const imageUrl = String(body?.imageUrl ?? "").trim();
   const endsAt = new Date(body?.endsAt ?? "");
 
   if (!title || !prize || Number.isNaN(endsAt.getTime())) {
@@ -18,10 +20,26 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+  if (imageUrl) {
+    try {
+      new URL(imageUrl);
+    } catch {
+      return NextResponse.json({ error: "Invalid image URL." }, { status: 400 });
+    }
+  }
 
   const giveaway = await db.giveaway.create({
     // admin-created giveaways go live immediately
-    data: { title, description, prize, endsAt, status: "ACTIVE", createdById: admin.id },
+    data: {
+      title,
+      description,
+      prize,
+      imageUrl: imageUrl || null,
+      endsAt,
+      signupGoal: parseSignupGoal(body?.signupGoal),
+      status: "ACTIVE",
+      createdById: admin.id,
+    },
   });
   return NextResponse.json({ ok: true, id: giveaway.id });
 }

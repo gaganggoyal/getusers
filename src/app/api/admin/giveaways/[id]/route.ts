@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GiveawayStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import { parseSignupGoal } from "@/lib/giveaway";
 
 /**
  * Moderate / manage a giveaway.
@@ -58,9 +59,14 @@ export async function PATCH(
     );
   }
 
+  const signupGoal =
+    body?.signupGoal !== undefined
+      ? parseSignupGoal(body.signupGoal)
+      : giveaway.signupGoal;
+
   await db.giveaway.update({
     where: { id },
-    data: { title, description, prize, imageUrl: imageUrl || null, endsAt },
+    data: { title, description, prize, imageUrl: imageUrl || null, endsAt, signupGoal },
   });
   return NextResponse.json({ ok: true });
 }

@@ -14,6 +14,8 @@ export type TaskView = {
   timerSeconds: number;
   completionStatus: "PENDING" | "APPROVED" | "REJECTED" | null;
   loggedIn: boolean;
+  /** whether the giveaway is still open for new entries */
+  open: boolean;
 };
 
 export default function TaskCard({ task }: { task: TaskView }) {
@@ -73,6 +75,8 @@ export default function TaskCard({ task }: { task: TaskView }) {
           <p className="text-sm font-medium text-amber-600">
             ⏳ Submitted — under review
           </p>
+        ) : !task.open ? (
+          <p className="text-sm text-slate-400">Entries are closed</p>
         ) : !task.loggedIn ? (
           <a href="/login" className="text-sm text-violet-600 hover:underline">
             Log in to complete this task

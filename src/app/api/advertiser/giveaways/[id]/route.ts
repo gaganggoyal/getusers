@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
+import { parseSignupGoal } from "@/lib/giveaway";
 
 /** Advertisers may edit/delete only giveaways they own that are not yet live. */
 async function loadOwned(id: string, userId: string, isAdmin: boolean) {
@@ -58,6 +59,11 @@ export async function PATCH(
       ? "PENDING"
       : giveaway.status;
 
+  const signupGoal =
+    body?.signupGoal !== undefined
+      ? parseSignupGoal(body.signupGoal)
+      : giveaway.signupGoal;
+
   await db.giveaway.update({
     where: { id },
     data: {
@@ -66,6 +72,7 @@ export async function PATCH(
       prize,
       imageUrl: imageUrl || null,
       endsAt,
+      signupGoal,
       status,
       reviewNote: status === "PENDING" ? null : giveaway.reviewNote,
     },

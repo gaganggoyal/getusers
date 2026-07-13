@@ -17,6 +17,7 @@ export type GiveawayShape = {
   prize: string;
   imageUrl: string | null;
   endsAt: string; // ISO
+  signupGoal: number | null;
   status: string;
 };
 
@@ -69,20 +70,38 @@ function GiveawayFields({ g }: { g?: GiveawayShape }) {
       />
       <input
         name="imageUrl"
-        placeholder="Image URL (optional)"
+        placeholder="Prize image URL (optional)"
         defaultValue={g?.imageUrl ?? ""}
         className="field"
       />
-      <label className="label">
-        Ends at
-        <input
-          name="endsAt"
-          type="datetime-local"
-          defaultValue={g ? toDatetimeLocal(g.endsAt) : undefined}
-          required
-          className="field mt-1"
-        />
-      </label>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="label">
+          Ends at (deadline)
+          <input
+            name="endsAt"
+            type="datetime-local"
+            defaultValue={g ? toDatetimeLocal(g.endsAt) : undefined}
+            required
+            className="field mt-1"
+          />
+        </label>
+        <label className="label">
+          Sign-up goal (optional)
+          <input
+            name="signupGoal"
+            type="number"
+            min={1}
+            placeholder="e.g. 500"
+            defaultValue={g?.signupGoal ?? undefined}
+            className="field mt-1"
+          />
+        </label>
+      </div>
+      <p className="text-xs text-slate-500">
+        With a goal set, entries close as soon as you hit that many sign-ups (or
+        the deadline) — so your prize isn&apos;t drawn before you reach your
+        target.
+      </p>
     </>
   );
 }

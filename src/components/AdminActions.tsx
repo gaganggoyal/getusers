@@ -221,10 +221,17 @@ export function CreateGiveawayForm() {
       <input name="title" placeholder="Title (e.g. iPhone 17 Giveaway)" required className="field" />
       <input name="prize" placeholder="Prize (e.g. iPhone 17 Pro 256GB)" required className="field" />
       <textarea name="description" placeholder="Description / rules" rows={3} className="field" />
-      <label className="label">
-        Ends at
-        <input name="endsAt" type="datetime-local" required className="field mt-1" />
-      </label>
+      <input name="imageUrl" placeholder="Prize image URL (optional)" className="field" />
+      <div className="grid grid-cols-2 gap-3">
+        <label className="label">
+          Ends at (deadline)
+          <input name="endsAt" type="datetime-local" required className="field mt-1" />
+        </label>
+        <label className="label">
+          Sign-up goal (optional)
+          <input name="signupGoal" type="number" min={1} placeholder="e.g. 500" className="field mt-1" />
+        </label>
+      </div>
       <button disabled={busy} className="btn">Create giveaway</button>
       <Msg msg={msg} />
     </form>

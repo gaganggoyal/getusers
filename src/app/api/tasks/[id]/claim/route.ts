@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
+import { isOpenForEntries } from "@/lib/giveaway";
 
 /**
  * User claims a task as done.
@@ -29,6 +30,17 @@ export async function POST(
     task.giveaway.status !== "ACTIVE"
   ) {
     return NextResponse.json({ error: "Task not available." }, { status: 404 });
+  }
+
+  // Enforce goal / deadline: no new entries once the giveaway is closed.
+  const approvedSignups = await db.completion.count({
+    where: { status: "APPROVED", task: { giveawayId: task.giveawayId } },
+  });
+  if (!isOpenForEntries(task.giveaway, approvedSignups)) {
+    return NextResponse.json(
+      { error: "This giveaway is closed for new entries." },
+      { status: 409 }
+    );
   }
 
   if (task.verification === "POSTBACK") {

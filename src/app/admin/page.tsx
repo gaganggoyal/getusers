@@ -17,6 +17,9 @@ import {
   TASK_STATUS_LABELS,
   TASK_STATUS_PILL,
 } from "@/lib/taskTypes";
+import PrizeImage from "@/components/PrizeImage";
+import GoalProgress from "@/components/GoalProgress";
+import { goalReached, datePassed } from "@/lib/giveaway";
 
 export const dynamic = "force-dynamic";
 
@@ -186,28 +189,62 @@ export default async function AdminPage() {
           moderate each offer.
         </p>
         <div className="space-y-4">
-          {sortedGiveaways.map((g) => (
+          {sortedGiveaways.map((g) => {
+            const approvedSignups = g.tasks.reduce(
+              (s, t) =>
+                s + t.completions.filter((c) => c.status === "APPROVED").length,
+              0
+            );
+            const hitGoal = goalReached(g, approvedSignups);
+            return (
             <div key={g.id} className="card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-slate-900">
-                    {g.title}{" "}
-                    <span className={`pill ml-1 ${GIVEAWAY_STATUS_PILL[g.status]}`}>
-                      {GIVEAWAY_STATUS_LABELS[g.status]}
-                    </span>
-                  </p>
-                  <p className="mt-1 text-sm text-amber-600">🏆 {g.prize}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {g.tasks.length} offer{g.tasks.length === 1 ? "" : "s"} · ends{" "}
-                    {g.endsAt.toLocaleDateString()}
-                    {g.createdBy && <> · by {g.createdBy.company ?? g.createdBy.email}</>}
-                    {g.winner && <> · winner: {g.winner.name}</>}
-                  </p>
+                <div className="flex gap-3">
+                  {g.imageUrl && (
+                    <div className="hidden h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 sm:flex">
+                      <PrizeImage
+                        src={g.imageUrl}
+                        alt={g.prize}
+                        className="max-h-16 max-w-16 object-contain"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-slate-900">
+                      {g.title}{" "}
+                      <span className={`pill ml-1 ${GIVEAWAY_STATUS_PILL[g.status]}`}>
+                        {GIVEAWAY_STATUS_LABELS[g.status]}
+                      </span>
+                      {g.status === "ACTIVE" && hitGoal && (
+                        <span className="pill ml-1 bg-emerald-100 text-emerald-700">
+                          🎯 Goal met — ready to draw
+                        </span>
+                      )}
+                      {g.status === "ACTIVE" && !hitGoal && datePassed(g) && (
+                        <span className="pill ml-1 bg-amber-100 text-amber-700">
+                          ⏰ Deadline passed
+                        </span>
+                      )}
+                    </p>
+                    <p className="mt-1 text-sm text-amber-600">🏆 {g.prize}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {g.tasks.length} offer{g.tasks.length === 1 ? "" : "s"} · ends{" "}
+                      {g.endsAt.toLocaleDateString()}
+                      {g.createdBy && <> · by {g.createdBy.company ?? g.createdBy.email}</>}
+                      {g.winner && <> · winner: {g.winner.name}</>}
+                    </p>
+                  </div>
                 </div>
                 <GiveawayControls
                   giveaway={{ id: g.id, title: g.title, status: g.status }}
                 />
               </div>
+
+              {g.signupGoal != null && (
+                <div className="mt-3 max-w-md">
+                  <GoalProgress current={approvedSignups} goal={g.signupGoal} />
+                </div>
+              )}
 
               {g.tasks.length > 0 && (
                 <div className="mt-4 space-y-2">
@@ -247,7 +284,8 @@ export default async function AdminPage() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
           {sortedGiveaways.length === 0 && (
             <p className="card p-5 text-sm text-slate-500">No giveaways yet.</p>
           )}
