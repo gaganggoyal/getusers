@@ -1,65 +1,403 @@
-import Image from "next/image";
+import Link from "next/link";
+import { db } from "@/lib/db";
+import { getSessionUser } from "@/lib/auth";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const [user, giveaways] = await Promise.all([
+    getSessionUser(),
+    db.giveaway.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { endsAt: "asc" },
+      include: { tasks: { where: { active: true } } },
+    }),
+  ]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="space-y-24">
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <section className="text-center pt-14 pb-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
+          The giveaway network that pays for itself
+        </p>
+        <h1 className="mt-4 text-4xl sm:text-5xl font-bold text-white leading-tight">
+          Real prizes for users.
+          <br />
+          <span className="text-indigo-400">Verified customers</span> for
+          advertisers.
+        </h1>
+        <p className="mt-5 text-slate-400 max-w-2xl mx-auto text-lg">
+          Users win giveaways by completing partner offers. Advertisers pay only
+          for conversions their own server confirms. Everyone sees exactly what
+          they get.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-4">
+          {!user && (
+            <Link
+              href="/register"
+              className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-6 py-3 text-white font-medium"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              🎁 Start winning — it&apos;s free
+            </Link>
+          )}
+          <Link
+            href={user ? "#giveaways" : "/advertiser/register"}
+            className="rounded-md border border-slate-600 hover:border-indigo-500 px-6 py-3 text-white font-medium"
+          >
+            {user ? "Browse giveaways" : "📈 I'm an advertiser"}
+          </Link>
+        </div>
+      </section>
+
+      {/* ── For users: how it works ──────────────────────────── */}
+      <section>
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400 text-center">
+          For users
+        </p>
+        <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-white text-center">
+          Win real prizes in three steps
+        </h2>
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          {[
+            {
+              n: "1",
+              t: "Join free",
+              d: "Create your account in 30 seconds. No fees, no credit card, no purchase — ever. Prizes are funded by our partner sponsors, not by you.",
+            },
+            {
+              n: "2",
+              t: "Complete simple tasks",
+              d: "Sign up on a partner site, try a new app, check out an offer. Every task shows exactly how many entries it's worth before you start.",
+            },
+            {
+              n: "3",
+              t: "Collect entries & win",
+              d: "Each entry is a ticket in the draw. Finish more tasks, hold more tickets, raise your odds. When the countdown hits zero, one ticket wins.",
+            },
+          ].map((s) => (
+            <div
+              key={s.n}
+              className="rounded-xl border border-slate-800 bg-slate-900/60 p-6"
             >
-              Learning
-            </a>{" "}
-            center.
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600/20 text-indigo-300 font-bold">
+                {s.n}
+              </span>
+              <h3 className="mt-4 font-semibold text-white">{s.t}</h3>
+              <p className="mt-2 text-sm text-slate-400">{s.d}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── What you can win right now ───────────────────────── */}
+      <section id="giveaways">
+        <h2 className="text-2xl sm:text-3xl font-bold text-white text-center">
+          What you can win right now
+        </h2>
+        {giveaways.length === 0 ? (
+          <p className="mt-6 text-slate-400 text-center">
+            No active giveaways at this moment — new prizes drop regularly, check
+            back soon!
+          </p>
+        ) : (
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            {giveaways.map((g) => {
+              const maxEntries = g.tasks.reduce((s, t) => s + t.entries, 0);
+              return (
+                <Link
+                  key={g.id}
+                  href={`/giveaways/${g.id}`}
+                  className="block rounded-xl border border-slate-800 bg-slate-900/60 p-5 hover:border-indigo-600 transition-colors"
+                >
+                  <h3 className="text-lg font-semibold text-white">{g.title}</h3>
+                  <p className="mt-1 text-sm text-indigo-400 font-medium">
+                    🏆 {g.prize}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400 line-clamp-2">
+                    {g.description}
+                  </p>
+                  <div className="mt-4 flex justify-between text-xs text-slate-500">
+                    <span>
+                      {g.tasks.length} task{g.tasks.length === 1 ? "" : "s"} · up
+                      to {maxEntries} entries
+                    </span>
+                    <span>Ends {g.endsAt.toLocaleDateString()}</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ── How winning works / fairness ─────────────────────── */}
+      <section className="rounded-2xl border border-slate-800 bg-linear-to-br from-slate-900/60 to-indigo-950/40 p-8 sm:p-12">
+        <h2 className="text-2xl sm:text-3xl font-bold text-white text-center">
+          How winners are picked —{" "}
+          <span className="text-indigo-400">and why it&apos;s fair</span>
+        </h2>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              i: "🎟️",
+              t: "Every entry is one ticket",
+              d: "A 5-entry task puts 5 tickets with your name in the drum. Nothing is hidden — each task shows its entry value up front.",
+            },
+            {
+              i: "🎲",
+              t: "Random draw, no favorites",
+              d: "When a giveaway ends, one ticket is drawn using cryptographically secure randomness. More tickets means better odds — that's the only advantage anyone can have.",
+            },
+            {
+              i: "👁️",
+              t: "See your odds live",
+              d: "Every giveaway page shows the total entries and your entries, updated in real time. You always know exactly where you stand.",
+            },
+            {
+              i: "📣",
+              t: "Winners announced publicly",
+              d: "The winner's name is published right on the giveaway page, and we contact them at their registered email to arrange prize delivery.",
+            },
+          ].map((c) => (
+            <div
+              key={c.t}
+              className="rounded-xl border border-slate-800 bg-slate-950/60 p-5"
+            >
+              <span className="text-2xl">{c.i}</span>
+              <h3 className="mt-3 font-semibold text-white">{c.t}</h3>
+              <p className="mt-2 text-sm text-slate-400">{c.d}</p>
+            </div>
+          ))}
+        </div>
+        {!user && (
+          <div className="mt-8 text-center">
+            <Link
+              href="/register"
+              className="inline-block rounded-md bg-indigo-600 hover:bg-indigo-500 px-6 py-3 text-white font-medium"
+            >
+              Create my free account →
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {/* ── User FAQ ─────────────────────────────────────────── */}
+      <section>
+        <h2 className="text-2xl sm:text-3xl font-bold text-white text-center">
+          Questions users ask us
+        </h2>
+        <div className="mt-8 mx-auto max-w-2xl space-y-3">
+          {[
+            {
+              q: "Is it really free? What's the catch?",
+              a: "Completely free — you never pay to enter and never need a credit card. Our partner sponsors fund the prizes: when you sign up for their offer, they support the giveaway. That's the whole business model, in the open.",
+            },
+            {
+              q: "When do my entries get credited?",
+              a: "Partner signups are credited automatically the moment the partner confirms — usually within minutes. Timer tasks credit instantly when you claim. Social tasks are reviewed by our team, normally within 24–48 hours. Your dashboard shows the live status of every task.",
+            },
+            {
+              q: "How do I know the draw isn't rigged?",
+              a: "The draw is a weighted random pick: every entry is one ticket, and a winning ticket is selected with cryptographically secure randomness. Total entries are visible on each giveaway page before the draw, and the winner is announced publicly on that same page.",
+            },
+            {
+              q: "How do I receive my prize if I win?",
+              a: "The winner's name appears on the giveaway page, and we email you at your registered address to arrange delivery. Make sure your email is one you actually check!",
+            },
+            {
+              q: "Can I enter with multiple accounts?",
+              a: "No — one account per person. Duplicate accounts are detected (we track signup patterns) and disqualified from draws. It keeps the odds honest for everyone.",
+            },
+            {
+              q: "Do I have to complete every task?",
+              a: "Not at all. Complete only the tasks you want — each one adds its own entries. More tasks simply mean more tickets in the draw.",
+            },
+          ].map((f) => (
+            <details
+              key={f.q}
+              className="group rounded-xl border border-slate-800 bg-slate-900/60 p-5"
+            >
+              <summary className="cursor-pointer list-none font-medium text-white flex items-center justify-between">
+                {f.q}
+                <span className="ml-4 text-slate-500 transition-transform group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 text-sm text-slate-400">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* ── For advertisers ──────────────────────────────────── */}
+      <section
+        id="advertisers"
+        className="rounded-2xl border border-slate-800 bg-linear-to-br from-indigo-950/50 to-slate-900/50 p-8 sm:p-12"
+      >
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400 text-center">
+          For advertisers
+        </p>
+        <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-white text-center">
+          Pay only for conversions{" "}
+          <span className="text-indigo-400">you confirm yourself</span>
+        </h2>
+        <p className="mt-4 text-slate-400 text-center max-w-2xl mx-auto">
+          No pixels to trust, no inflated click reports. A conversion counts
+          only when <em>your</em> server tells ours it happened.
+        </p>
+
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              i: "👤",
+              t: "Real, registered users",
+              d: "Every visitor we send is a logged-in member with a tracked history — not anonymous traffic.",
+            },
+            {
+              i: "🎯",
+              t: "True CPA pricing",
+              d: "Users are motivated to finish your funnel, and you credit only completed signups, installs or purchases.",
+            },
+            {
+              i: "🛡️",
+              t: "Fraud protection built in",
+              d: "One completion per user per offer, IP & device capture, duplicate-account flags — and you can reverse any conversion.",
+            },
+            {
+              i: "📊",
+              t: "Live dashboard",
+              d: "Clicks, confirmed conversions and conversion rate per offer, in real time. Your numbers always match ours.",
+            },
+          ].map((c) => (
+            <div
+              key={c.t}
+              className="rounded-xl border border-slate-800 bg-slate-950/60 p-5"
+            >
+              <span className="text-2xl">{c.i}</span>
+              <h3 className="mt-3 font-semibold text-white">{c.t}</h3>
+              <p className="mt-2 text-sm text-slate-400">{c.d}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link
+            href="/advertiser/register"
+            className="inline-block rounded-md bg-indigo-600 hover:bg-indigo-500 px-6 py-3 text-white font-medium"
+          >
+            Create advertiser account →
+          </Link>
+          <p className="mt-3 text-sm text-slate-500">
+            Your tracking key is issued instantly.{" "}
+            <Link href="/advertiser/login" className="text-indigo-400 hover:underline">
+              Already have an account? Sign in
+            </Link>
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* ── Tracking / integration ───────────────────────────── */}
+      <section>
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400 text-center">
+          Tracking that just works
+        </p>
+        <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-white text-center">
+          Integrate in minutes — one call from your server
+        </h2>
+
+        <div className="mt-10 grid gap-4 lg:grid-cols-3">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+            <h3 className="font-semibold text-white">
+              1 · We tag every visitor
+            </h3>
+            <p className="mt-2 text-sm text-slate-400">
+              Users reach your site with a unique{" "}
+              <code className="text-indigo-300">click_id</code> attached to the
+              URL. Store it with the signup — that&apos;s the only change to
+              your funnel.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+            <h3 className="font-semibold text-white">
+              2 · You confirm the conversion
+            </h3>
+            <p className="mt-2 text-sm text-slate-400">
+              When the signup is genuine — account created, email verified,
+              whatever <em>you</em> define as success — your backend calls one
+              URL:
+            </p>
+            <pre className="mt-3 overflow-x-auto rounded-md bg-slate-950 border border-slate-800 p-3 text-xs text-emerald-300">
+{`GET /api/postback
+    ?click_id={click_id}
+    &key=YOUR_SECRET_KEY`}
+            </pre>
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+            <h3 className="font-semibold text-white">
+              3 · Entries credited, stats updated
+            </h3>
+            <p className="mt-2 text-sm text-slate-400">
+              The user gets their giveaway entries instantly, and the conversion
+              appears on your dashboard. Change your mind later?{" "}
+              <code className="text-indigo-300">status=rejected</code> reverses
+              it.
+            </p>
+          </div>
         </div>
-      </main>
+
+        <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/60 p-6">
+          <h3 className="font-semibold text-white">Why it&apos;s safe</h3>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2 text-sm text-slate-400">
+            <li>
+              🔒 <strong className="text-slate-300">Server-to-server</strong> —
+              the postback fires from your backend, never from the browser, so
+              users can&apos;t see or forge it.
+            </li>
+            <li>
+              🗝️ <strong className="text-slate-300">Secret key</strong> — each
+              advertiser gets a private key; only you can credit your offers.
+            </li>
+            <li>
+              ♻️ <strong className="text-slate-300">Idempotent</strong> —
+              duplicate or retried postbacks are acknowledged, never
+              double-counted.
+            </li>
+            <li>
+              ↩️ <strong className="text-slate-300">Reversible</strong> —
+              detected fraud or chargebacks can be rolled back any time, and the
+              user&apos;s entries are pulled.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      {/* ── Closing CTA ──────────────────────────────────────── */}
+      {!user && (
+        <section className="text-center rounded-2xl border border-slate-800 bg-slate-900/60 p-10">
+          <h2 className="text-2xl font-bold text-white">
+            Two sides. One honest deal.
+          </h2>
+          <p className="mt-3 text-slate-400 max-w-xl mx-auto">
+            Join as a user and start earning entries today, or launch an offer
+            and watch verified customers roll in.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/register"
+              className="rounded-md bg-indigo-600 hover:bg-indigo-500 px-6 py-3 text-white font-medium"
+            >
+              Sign up as a user
+            </Link>
+            <Link
+              href="/advertiser/register"
+              className="rounded-md border border-slate-600 hover:border-indigo-500 px-6 py-3 text-white font-medium"
+            >
+              Sign up as an advertiser
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

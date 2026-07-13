@@ -17,6 +17,11 @@
 /.next/
 /out/
 
+# database (local SQLite — regenerate with `prisma migrate` + `npm run db:seed`)
+*.db
+*.db-journal
+/prisma/dev.db
+
 # production
 /build
 

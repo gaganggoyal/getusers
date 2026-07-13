@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum Role {
+  USER
+  ADVERTISER
+  ADMIN
+}
+
+enum GiveawayStatus {
+  DRAFT
+  ACTIVE
+  ENDED
+}
+
+enum TaskType {
+  PARTNER_SIGNUP
+  APP_INSTALL
+  YOUTUBE_SUBSCRIBE
+  YOUTUBE_LIKE
+  INSTAGRAM_FOLLOW
+  X_FOLLOW
+  NEWSLETTER_SIGNUP
+  CUSTOM
+}
+
+enum VerificationMode {
+  POSTBACK // server-to-server postback from advertiser (highest quality)
+  MANUAL // user claims, admin/advertiser reviews proof
+  TIMER // user must stay on target for N seconds, then auto-credit (lowest trust)
+}
+
+enum CompletionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(USER)
+  // advertiser-only: secret key advertisers include in postback calls
+  postbackKey  String?  @unique
+  company      String?
+  website      String?
+  signupIp     String?
+  createdAt    DateTime @default(now())
+
+  tasks       Task[]       @relation("AdvertiserTasks")
+  clicks      Click[]
+  completions Completion[]
+  wins        Giveaway[]   @relation("GiveawayWinner")
+}
+
+model Giveaway {
+  id          String         @id @default(cuid())
+  title       String
+  description String
+  prize       String
+  imageUrl    String?
+  status      GiveawayStatus @default(ACTIVE)
+  endsAt      DateTime
+  winnerId    String?
+  winner      User?          @relation("GiveawayWinner", fields: [winnerId], references: [id])
+  createdAt   DateTime       @default(now())
+
+  tasks Task[]
+}
+
+model Task {
+  id           String           @id @default(cuid())
+  giveawayId   String
+  giveaway     Giveaway         @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  advertiserId String?
+  advertiser   User?            @relation("AdvertiserTasks", fields: [advertiserId], references: [id])
+  type         TaskType
+  title        String
+  description  String
+  // where the user is sent; {click_id} placeholder is replaced with the tracked id
+  targetUrl    String
+  entries      Int              @default(1)
+  verification VerificationMode @default(POSTBACK)
+  timerSeconds Int              @default(30)
+  active       Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+
+  clicks      Click[]
+  completions Completion[]
+}
+
+model Click {
+  id        String   @id @default(cuid())
+  clickId   String   @unique // token passed to advertiser and echoed back in postback
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  completion Completion?
+
+  @@index([taskId, userId])
+}
+
+model Completion {
+  id         String           @id @default(cuid())
+  taskId     String
+  task       Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clickDbId  String?          @unique
+  click      Click?           @relation(fields: [clickDbId], references: [id])
+  status     CompletionStatus @default(PENDING)
+  source     VerificationMode
+  // proof link/username submitted by user for MANUAL tasks
+  proof      String?
+  // payout reported by advertiser postback, informational
+  payout     Float?
+  ip         String?
+  createdAt  DateTime         @default(now())
+  reviewedAt DateTime?
+
+  @@unique([taskId, userId])
+}
