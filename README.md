@@ -11,6 +11,21 @@ advertisers can verify the traffic they pay for. Production domain:
 > [More ↓](#why-it-works-this-way) · Portfolio:
 > [gagan.indiaoffers.in](https://gagan.indiaoffers.in)
 
+## At a glance
+
+|  |  |
+|---|---|
+| **What** | Rewards platform with affiliate-grade conversion tracking: every task click gets a `click_id`, and entries are only credited when the advertiser's **server** confirms the conversion (S2S postback) |
+| **Stack** | Next.js 16 (App Router) · TypeScript · Prisma 6 (SQLite dev → Postgres prod) · Tailwind v4 · JWT session cookies (`jose`) |
+| **Live** | [getusers.online](https://getusers.online) |
+| **Trust model** | Per-advertiser postback secrets · idempotent conversion endpoint · reversible conversions (fraud/chargeback) · IP/UA capture + shared-IP fraud signals from day one |
+
+**Where to look first** (for reviewers):
+
+- [src/app/go/[taskId]/route.ts](src/app/go/%5BtaskId%5D/route.ts) — click recording + `click_id` redirect (the top of the tracking funnel)
+- [src/app/api/postback/route.ts](src/app/api/postback/route.ts) — authenticated, idempotent S2S conversion endpoint
+- [prisma/schema.prisma](prisma/schema.prisma) — the whole data model, including the unique constraints that stop duplicate claims
+
 ## Quick start
 
 ```bash
@@ -78,11 +93,6 @@ The seeded advertiser's postback key is `demo-postback-key-acme`.
 
 The home page is a dual-audience landing (Admitad-style): user benefits, advertiser
 benefits, and the 3-step tracking integration pitch.
-
-## Stack
-
-Next.js 16 (App Router) · TypeScript · Tailwind v4 · Prisma 6 + SQLite (swap
-`datasource` to Postgres for production) · JWT session cookies (`jose`).
 
 ## Compliance note
 
