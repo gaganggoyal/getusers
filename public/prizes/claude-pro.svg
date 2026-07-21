@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400" role="img" aria-label="Claude Pro gift subscription, one month">
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e1b34"/>
+      <stop offset="100%" stop-color="#3b2f5e"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="400" rx="34" fill="url(#card)"/>
+  <rect x="10" y="10" width="380" height="380" rx="26" fill="none" stroke="#ffffff" stroke-opacity=".14" stroke-width="1.5"/>
+
+  <!-- gift ribbon -->
+  <rect x="0" y="150" width="400" height="34" fill="url(#ribbon)" opacity=".16"/>
+  <rect x="183" y="0" width="34" height="400" fill="url(#ribbon)" opacity=".16"/>
+
+  <!-- sparkle -->
+  <g transform="translate(200 108)" fill="#fbbf24">
+    <path d="M0-34 8.5-8.5 34 0 8.5 8.5 0 34-8.5 8.5-34 0-8.5-8.5Z"/>
+    <path d="M40-14 44-4 54 0 44 4 40 14 36 4 26 0 36-4Z" opacity=".65"/>
+  </g>
+
+  <text x="200" y="212" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="42" font-weight="700" fill="#ffffff">Claude Pro</text>
+  <text x="200" y="248" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="16" font-weight="600" letter-spacing="3" fill="#c4b5fd">GIFT SUBSCRIPTION</text>
+
+  <rect x="132" y="278" width="136" height="42" rx="21" fill="#fbbf24"/>
+  <text x="200" y="306" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="18" font-weight="800" fill="#1e1b34">1 MONTH</text>
+
+  <text x="200" y="352" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" fill="#a5a0c4">₹2,399 value · 1 winner</text>
+</svg>
