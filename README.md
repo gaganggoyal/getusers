@@ -5,12 +5,6 @@ A giveaway platform where registered users earn entries by completing advertiser
 advertisers can verify the traffic they pay for. Production domain:
 [getusers.online](https://getusers.online).
 
-> Built AI-first (openly), designed by someone who has spent years on the
-> *other* side — screening affiliate traffic for fraud. That's why tracking
-> and verification are the core, not the giveaways.
-> [More ↓](#why-it-works-this-way) · Portfolio:
-> [gagan.indiaoffers.in](https://gagan.indiaoffers.in)
-
 ## At a glance
 
 |  |  |
@@ -111,22 +105,20 @@ postback-verified partner signups, installs, and newsletter offers.
 
 ## Why it works this way
 
-Transparency first: the code was written with AI pair-programming, a workflow
-I trained myself in. The design decisions are mine, and they come from my day
-job — onboarding affiliate networks and screening out fraudulent traffic:
+The design comes from my day job: onboarding affiliate networks and screening
+out fraudulent traffic.
 
-- **Postback-verified conversions are the spine** — advertisers only trust
+- **Postback-verified conversions are the spine.** Advertisers only trust
   traffic they can verify, so every click gets a `click_id` and every payout
   waits for the advertiser's server to confirm. That's how real affiliate
   networks work; giveaway scripts skip it.
 - **Fraud signals and manual review exist from day one**, because incentivized
   traffic attracts abuse before it attracts users.
-- **The compliance note above is a product decision too** — I'd rather steer
-  advertisers away from fake-engagement tasks than ship a platform that gets
-  their accounts banned. An AI scaffold doesn't refuse a feature; an operator
-  does.
+- **The compliance note above is deliberate.** I'd rather steer advertisers
+  away from fake-engagement tasks than run a platform that gets their
+  accounts banned.
 
-The code is open — audit the tracking flow end to end.
+The code is open, so you can follow the tracking flow end to end.
 
 ---
 
